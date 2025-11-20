@@ -11,9 +11,10 @@ import Message from "./models/Message.js";
 const app = express();
 const server = http.createServer(app);
 
+// Render allows ANY origin (important)
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "*",
     credentials: true,
   })
 );
@@ -22,13 +23,12 @@ app.use(express.json({ limit: "4mb" }));
 
 export const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: "*",
     credentials: true,
   },
 });
 
-export const userSocketMap = {}; 
-
+export const userSocketMap = {};
 
 io.on("connection", (socket) => {
   const userId = socket.handshake.query.userId;
@@ -45,17 +45,16 @@ io.on("connection", (socket) => {
   });
 });
 
-
-
-app.use("/api/status", (req, res) => res.send("Server is live"));
+// routes
+app.get("/", (req, res) => res.send("Server is live"));
 app.use("/api/auth", userRouter);
 app.use("/api/messages", messageRouter);
 
-// db connection
+// connect DB
 await connectDB();
-if(process.env.NODE_ENV !== "production"){
+
+// render uses process.env.PORT
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log("Server running on PORT:", PORT));
-}
 
 export default server;
