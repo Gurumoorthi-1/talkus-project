@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState([]);
 
-  
+
   useEffect(() => {
     if (token) {
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -28,11 +28,11 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token]);
 
-  
+
   const connectSocket = (user) => {
     if (!user) return;
 
-   
+
     if (socket) {
       socket.disconnect();
     }
@@ -61,7 +61,15 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data } = await axios.post(`/api/auth/${state}`, credentials);
 
-      if (!data.success) return toast.error(data.message);
+      if (!data.success) {
+        toast.error(data.message);
+        return false;
+      }
+
+      if (state === "signup") {
+        toast.success("Account created successfully! Please login.");
+        return true;
+      }
 
       setAuthUser(data.user);
       setToken(data.token);
@@ -71,8 +79,10 @@ export const AuthProvider = ({ children }) => {
 
       toast.success("Logged in successfully ");
       navigate("/");
+      return true;
     } catch (e) {
       toast.error(e.response?.data?.message || "Login failed ");
+      return false;
     }
   };
 
@@ -93,7 +103,7 @@ export const AuthProvider = ({ children }) => {
       if (!data.success) return false;
 
       setAuthUser(data.user);
-      return true; 
+      return true;
     } catch (error) {
       console.log(error);
       return false;
@@ -104,7 +114,7 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, [token]);
 
-  
+
   useEffect(() => {
     return () => {
       socket?.disconnect();
