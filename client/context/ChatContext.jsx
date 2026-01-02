@@ -62,11 +62,15 @@ export const ChatProvider = ({ children }) => {
       if (res.data.success) {
         setMessages((prev) => prev.map((msg) => (msg._id === tempId ? res.data.newMessage : msg)));
         socket?.emit("newMessage", res.data.newMessage);
+      } else {
+        // Backend returned error
+        setMessages((prev) => prev.filter((msg) => msg._id !== tempId));
+        toast.error(res.data.message || "Failed to send message");
       }
     } catch (error) {
       console.log("Send message error:", error);
       setMessages((prev) => prev.filter((msg) => msg._id !== tempId));
-      // You might want to show a toast error here
+      toast.error("Failed to send message. Please try again.");
     }
   };
 
