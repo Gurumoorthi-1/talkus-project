@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL || `${window.location.protocol}//${window.location.hostname}:5000`;
+const backendUrl = import.meta.env.MODE === "development" ? "http://localhost:5000" : "https://talkus-project.onrender.com";
 
 axios.defaults.baseURL = backendUrl;
 axios.defaults.withCredentials = true;
