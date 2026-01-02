@@ -13,7 +13,7 @@ const server = http.createServer(app);
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://10.144.235.21:5173"],
+    origin: true,
     credentials: true,
   })
 );
@@ -21,8 +21,9 @@ app.use(
 app.use(express.json({ limit: "4mb" }));
 
 export const io = new Server(server, {
+  pingInterval: 10000,
   cors: {
-    origin: ["http://localhost:5173", "http://10.144.235.21:5173"],
+    origin: true,
     credentials: true,
   },
 });
@@ -38,10 +39,44 @@ io.on("connection", (socket) => {
 
   io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
+  // Update pending messages to 'delivered'
+  (async () => {
+    try {
+      const pendingMessages = await Message.find({ receiverId: userId, status: "sent" });
+
+      if (pendingMessages.length > 0) {
+        await Message.updateMany({ receiverId: userId, status: "sent" }, { $set: { status: "delivered" } });
+
+        const sendersToNotify = [...new Set(pendingMessages.map(msg => msg.senderId.toString()))];
+
+        sendersToNotify.forEach(senderId => {
+          const senderSocket = userSocketMap[senderId];
+          if (senderSocket) {
+            io.to(senderSocket).emit("messagesDelivered", { receiverId: userId });
+          }
+        });
+      }
+    } catch (error) {
+      console.log("Error updating delivered status:", error);
+    }
+  })();
+
   socket.on("disconnect", () => {
     console.log("User disconnected:", userId);
     delete userSocketMap[userId];
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
+  });
+
+  socket.on("messagesSeen", async ({ senderId, receiverId }) => {
+    const senderSocket = userSocketMap[senderId];
+    if (senderSocket) {
+      io.to(senderSocket).emit("messagesSeen", { senderId: receiverId });
+    }
+
+    await Message.updateMany(
+      { senderId: senderId, receiverId: receiverId, status: { $ne: "seen" } },
+      { $set: { status: "seen" } }
+    );
   });
 });
 

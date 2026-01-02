@@ -2,6 +2,7 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import cloudinary from "../lib/cloudinary.js";
 import { generateToken } from "../lib/utils.js";
+import { io } from "../server.js";
 
 // SIGNUP
 export const signup = async (req, res) => {
@@ -93,6 +94,9 @@ export const updateProfile = async (req, res) => {
     }
 
     const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true }).select("-password");
+
+    // Real-time update broadcast
+    io.emit("userProfileUpdated", updatedUser);
 
     res.json({ success: true, user: updatedUser });
 

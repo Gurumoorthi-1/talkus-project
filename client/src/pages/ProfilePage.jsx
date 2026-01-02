@@ -28,19 +28,22 @@ const ProfilePage = () => {
         body.profilePic = base64Image;
       }
 
-      const success = await updateProfile(body);
+      // Fire and forget (Optimistic Navigation)
+      updateProfile(body).then((success) => {
+        if (!success) {
+          toast.error("Profile update failed");
+        }
+      });
 
-      if (success) {
-        toast.success("Profile updated successfully ");
-        navigate("/");
-      }
+      toast.success("Profile updating...");
+      navigate("/");
 
     } catch (err) {
       toast.error("Something went wrong! Try again.");
     }
   };
 
- 
+
   const previewImg = SelectedImg
     ? URL.createObjectURL(SelectedImg)
     : authUser?.profilePic || assets.avatar_icon;
@@ -54,7 +57,7 @@ const ProfilePage = () => {
       <div className="relative z-10 w-[95%] max-w-3xl bg-white/10 backdrop-blur-xl text-gray-200 
       border border-white/20 rounded-xl shadow-2xl overflow-hidden flex flex-col md:flex-row items-center">
 
-        
+
         <div className="w-full flex md:hidden justify-center py-6">
           <img
             src={previewImg}

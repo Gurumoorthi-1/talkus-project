@@ -18,17 +18,9 @@ const ChatContainer = () => {
 
   const currentUserId = authUser?._id;
 
-  useEffect(() => {
-    if (!socket || !selectedUser) return;
 
-    socket.emit("markMessagesSeen", {
-      senderId: selectedUser._id,
-      receiverId: authUser._id,
-    });
 
-  }, [selectedUser]);
 
- 
   useEffect(() => {
     if (selectedUser) getMessages(selectedUser._id);
   }, [selectedUser]);
@@ -129,8 +121,8 @@ const ChatContainer = () => {
                       msg.status === "seen"
                         ? <span className="text-green-400 text-[12px]">✔✔</span>
                         : msg.status === "delivered"
-                        ? <span className="text-gray-400 text-[12px]">✔✔</span>
-                        : <span className="text-gray-400 text-[12px]">✔</span>
+                          ? <span className="text-gray-400 text-[12px]">✔✔</span>
+                          : <span className="text-gray-400 text-[12px]">✔</span>
                     )}
                   </div>
 

@@ -2,10 +2,19 @@
 @import "tailwindcss";
 
 
-*{
-    font-family: "Outfit", sans-serif;
+* {
+  font-family: "Outfit", sans-serif;
 }
 
-::-webkit-scrollbar{
+body {
+  background-image: url('./assets/img/background.png') !important;
+  background-size: cover !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-attachment: fixed !important;
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar {
   display: none;
 }

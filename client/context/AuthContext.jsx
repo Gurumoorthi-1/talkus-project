@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
+const backendUrl = import.meta.env.VITE_BACKEND_URL || `${window.location.protocol}//${window.location.hostname}:5000`;
 
 axios.defaults.baseURL = backendUrl;
 axios.defaults.withCredentials = true;
@@ -37,7 +37,10 @@ export const AuthProvider = ({ children }) => {
       socket.disconnect();
     }
 
-    const newSocket = io(backendUrl, { query: { userId: user._id } });
+    const newSocket = io(backendUrl, {
+      query: { userId: user._id },
+      transports: ["websocket"],
+    });
     newSocket.on("getOnlineUsers", (users) => setOnlineUsers(users));
     setSocket(newSocket);
   };
@@ -96,16 +99,27 @@ export const AuthProvider = ({ children }) => {
   };
 
   //  Profile Update 
+  //  Profile Update 
   const updateProfile = async (body) => {
+    const previousUser = { ...authUser };
+
+    // Optimistic Update
+    setAuthUser((prev) => ({ ...prev, ...body }));
+
     try {
       const { data } = await axios.put("/api/auth/update-profile", body);
 
-      if (!data.success) return false;
+      if (!data.success) {
+        setAuthUser(previousUser);
+        return false;
+      }
 
+      // Update with server response (e.g. secure_url from cloudinary)
       setAuthUser(data.user);
       return true;
     } catch (error) {
       console.log(error);
+      setAuthUser(previousUser);
       return false;
     }
   };

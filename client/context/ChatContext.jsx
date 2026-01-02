@@ -42,14 +42,31 @@ export const ChatProvider = ({ children }) => {
   // Send message
   const sendMessage = async (content) => {
     if (!selectedUser) return;
+
+    // Optimistic Update
+    const tempId = Date.now();
+    const tempMessage = {
+      _id: tempId,
+      senderId: authUser._id,
+      receiverId: selectedUser._id,
+      text: content.text || "",
+      image: content.image || "",
+      createdAt: new Date().toISOString(),
+      status: "sent",
+    };
+
+    setMessages((prev) => [...prev, tempMessage]);
+
     try {
       const res = await axios.post(`/api/messages/send/${selectedUser._id}`, content);
       if (res.data.success) {
-        setMessages((prev) => [...prev, res.data.newMessage]);
+        setMessages((prev) => prev.map((msg) => (msg._id === tempId ? res.data.newMessage : msg)));
         socket?.emit("newMessage", res.data.newMessage);
       }
     } catch (error) {
       console.log("Send message error:", error);
+      setMessages((prev) => prev.filter((msg) => msg._id !== tempId));
+      // You might want to show a toast error here
     }
   };
 
@@ -82,8 +99,37 @@ export const ChatProvider = ({ children }) => {
       );
     };
 
+    const handleMessagesDelivered = ({ receiverId }) => {
+      setMessages((prev) =>
+        prev.map((msg) => (msg.senderId === authUser._id && msg.receiverId === receiverId && msg.status === "sent" ? { ...msg, status: "delivered" } : msg))
+      );
+    };
+
     socket.on("messagesSeen", handleMessagesSeen);
-    return () => socket.off("messagesSeen", handleMessagesSeen);
+    socket.on("messagesDelivered", handleMessagesDelivered);
+
+    const handleProfileUpdate = (updatedUser) => {
+      setUsers((prevUsers) =>
+        prevUsers.map((user) => (user._id === updatedUser._id ? updatedUser : user))
+      );
+
+      // Update selectedUser if it's the one being chatted with
+      // We use functional state to get current selectedUser
+      setSelectedUser((prevSelected) => {
+        if (prevSelected && prevSelected._id === updatedUser._id) {
+          return { ...prevSelected, ...updatedUser };
+        }
+        return prevSelected;
+      });
+    };
+
+    socket.on("userProfileUpdated", handleProfileUpdate);
+
+    return () => {
+      socket.off("messagesSeen", handleMessagesSeen);
+      socket.off("messagesDelivered", handleMessagesDelivered);
+      socket.off("userProfileUpdated", handleProfileUpdate);
+    };
   }, [socket, authUser]);
 
   return (

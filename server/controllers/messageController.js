@@ -47,7 +47,7 @@ export const getMessages = async (req, res) => {
     //  Notify Sender Live
     const senderSocket = userSocketMap[selectedUserId];
     if (senderSocket) {
-      io.to(senderSocket).emit("messagesSeen", loggedUserId);
+      io.to(senderSocket).emit("messagesSeen", { senderId: loggedUserId });
     }
 
     res.json({ success: true, messages });
