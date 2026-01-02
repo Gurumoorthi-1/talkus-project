@@ -18,7 +18,7 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: "4mb" }));
+app.use(express.json({ limit: "50mb" }));
 
 export const io = new Server(server, {
   pingInterval: 10000,
